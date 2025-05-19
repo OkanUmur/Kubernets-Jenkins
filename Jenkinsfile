@@ -6,11 +6,12 @@ pipeline {
     }
 
     stages {
-        stage('Clone Repo') {
-            steps {
-                git 'https://github.com/OkanUmur/Kubernets-Jenkins.git'
-            }
-        }
+       stage('Clone Repo') {
+           steps {
+               git branch: 'main', url: 'https://github.com/OkanUmur/Kubernets-Jenkins.git'
+           }
+       }
+
 
         stage('Build with Gradle') {
             steps {
