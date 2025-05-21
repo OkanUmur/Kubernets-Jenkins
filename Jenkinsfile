@@ -2,42 +2,55 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "okanumur/kubernets-jenkins"
+        DOCKER_IMAGE = "okanumur/kubernets:${BUILD_NUMBER}"
+    }
+
+    triggers {
+        githubPush() // webhook tetiklemesi
     }
 
     stages {
-       stage('Clone Repo') {
-           steps {
-               git branch: 'main', url: 'https://github.com/OkanUmur/Kubernets-Jenkins.git'
-           }
-       }
-
-
-        stage('Build with Gradle') {
+        stage('Clone Repository') {
             steps {
-                sh './gradlew clean build -x test'
+                git 'https://github.com/OkanUmur/Kubernets-Jenkins.git'
+            }
+        }
+
+        stage('Build JAR') {
+            steps {
+                sh './gradlew clean build'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t $IMAGE_NAME .'
+                sh "docker build -t ${DOCKER_IMAGE} ."
             }
         }
 
-        stage('Push to Docker Hub') {
+        stage('Docker Login') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-                    sh 'docker push $IMAGE_NAME'
+                    sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
                 }
             }
         }
 
-        stage('Deploy to Minikube') {
+        stage('Push Docker Image') {
             steps {
-                sh 'kubectl apply -f k8s/deployment.yaml'
-                sh 'kubectl apply -f k8s/service.yaml'
+                sh "docker push ${DOCKER_IMAGE}"
+            }
+        }
+
+        stage('Update Kubernetes Deployment') {
+            steps {
+                sh "kubectl set image deployment/kubernets-deployment kubernets-container=${DOCKER_IMAGE}"
+            }
+        }
+
+        stage('Apply Service') {
+            steps {
+                sh "kubectl apply -f k8s/service.yaml"
             }
         }
     }
