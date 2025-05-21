@@ -2,8 +2,9 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "okanumur/kubernets-jenkins"
-    }
+            IMAGE_NAME = "okanumur/kubernets-jenkins"
+            IMAGE_TAG = "${env.BUILD_NUMBER}"
+        }
 
     stages {
        stage('Clone Repo') {
@@ -36,6 +37,7 @@ pipeline {
 
         stage('Deploy to Minikube') {
             steps {
+                sh "sed -i 's|image: okanumur/kubernets-jenkins:.*|image: $IMAGE_NAME:$IMAGE_TAG|' k8s/deployment.yaml"
                 sh 'kubectl apply -f k8s/deployment.yaml'
                 sh 'kubectl apply -f k8s/service.yaml'
             }
