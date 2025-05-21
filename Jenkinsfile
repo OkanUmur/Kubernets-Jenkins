@@ -12,7 +12,7 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git 'https://github.com/OkanUmur/Kubernets-Jenkins.git'
+                git branch: 'main', url: 'https://github.com/OkanUmur/Kubernets-Jenkins.git'
             }
         }
 
